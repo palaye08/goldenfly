@@ -37,4 +37,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query("SELECT r FROM Reservation r WHERE r.utilisateur.id = :utilisateurId " +
             "ORDER BY r.dateCreation DESC")
     List<Reservation> findByUtilisateurIdOrderByDateCreationDesc(@Param("utilisateurId") Long utilisateurId);
+    // Compter les réservations pour un vol aller
+    long countByVolAllerId(Long volId);
+
+    // Compter les réservations pour un vol retour
+    long countByVolRetourId(Long volId);
+
+    // Vos autres méthodes existantes...
+    List<Reservation> findByUtilisateurId(Long utilisateurId);
 }

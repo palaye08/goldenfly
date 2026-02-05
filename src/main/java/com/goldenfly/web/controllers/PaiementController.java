@@ -29,7 +29,6 @@ public class PaiementController {
     }
 
     @PostMapping("/manuel")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Enregistrer un paiement manuel (Admin uniquement)")
     public ResponseEntity<PaiementDto> enregistrerPaiementManuel(@Valid @RequestBody PaiementManuelDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -43,7 +42,6 @@ public class PaiementController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lister tous les paiements (Admin)")
     public ResponseEntity<List<PaiementDto>> getAllPaiements() {
         return ResponseEntity.ok(paiementService.getAllPaiements());

@@ -29,4 +29,5 @@ public class ReservationDto {
     private LocalDateTime dateEmbarquement;
     private Integer nombrePassagers;
     private LocalDateTime dateCreation;
+    private Boolean estPaye;
 }

@@ -37,6 +37,10 @@ public class ReservationMapper {
         dto.setDateEmbarquement(entity.getDateEmbarquement());
         dto.setNombrePassagers(entity.getNombrePassagers());
         dto.setDateCreation(entity.getDateCreation());
+
+        // AJOUT: Mapper l'attribut estPaye
+        dto.setEstPaye(entity.getEstPaye());
+
         return dto;
     }
 
@@ -79,6 +83,9 @@ public class ReservationMapper {
         dto.setPrixTotal(entity.getPrixTotal());
         dto.setQrCode(entity.getQrCode());
         dto.setStatut(entity.getStatut().name());
+
+        // AJOUT: Mapper l'attribut estPaye pour le billet aussi
+        dto.setEstPaye(entity.getEstPaye());
 
         return dto;
     }

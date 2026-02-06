@@ -47,6 +47,13 @@ public class PaiementController {
         return ResponseEntity.ok(paiementService.getAllPaiements());
     }
 
+    // NOUVEAU: Endpoint pour récupérer les paiements d'un utilisateur
+    @GetMapping("/utilisateur/{utilisateurId}")
+    @Operation(summary = "Lister les paiements d'un utilisateur")
+    public ResponseEntity<List<PaiementDto>> getPaiementsByUtilisateur(@PathVariable Long utilisateurId) {
+        return ResponseEntity.ok(paiementService.getPaiementsByUtilisateur(utilisateurId));
+    }
+
     // Callbacks pour les providers de paiement
     @PostMapping("/wave/callback")
     @Operation(summary = "Callback Wave (webhook)")

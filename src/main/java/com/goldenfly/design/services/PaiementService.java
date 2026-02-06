@@ -44,17 +44,19 @@ public class PaiementService {
         Reservation reservation = reservationRepository.findById(dto.getReservationId())
                 .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
 
-        // Vérifier si la réservation est déjà payée
-        if (Boolean.TRUE.equals(reservation.getEstPaye())) {
-            log.warn("⚠️ Tentative de paiement d'une réservation déjà payée: {}", reservation.getNumeroReservation());
-            throw new RuntimeException("Cette réservation est déjà payée");
-        }
+        // Vérifier si la réservation est déjà payée (en vérifiant le paiement existant)
+        paiementRepository.findByReservation(reservation).ifPresent(existingPaiement -> {
+            if (existingPaiement.getStatut() == StatutPaiementEnum.PAYE) {
+                log.warn("⚠️ Tentative de paiement d'une réservation déjà payée: {}", reservation.getNumeroReservation());
+                throw new RuntimeException("Cette réservation est déjà payée");
+            }
+        });
 
         // Vérifier si la réservation est annulée
-        if (reservation.getStatut() == StatutReservationEnum.ANNULEE) {
-            log.warn("⚠️ Tentative de paiement d'une réservation annulée: {}", reservation.getNumeroReservation());
-            throw new RuntimeException("Cette réservation est annulée");
-        }
+//        if (reservation.getStatut() == StatutReservationEnum.ANNULEE) {
+//            log.warn("⚠️ Tentative de paiement d'une réservation annulée: {}", reservation.getNumeroReservation());
+//            throw new RuntimeException("Cette réservation est annulée");
+//        }
 
         // Créer le paiement
         Paiement paiement = new Paiement();
@@ -102,10 +104,12 @@ public class PaiementService {
                 .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
 
         // Vérifier si la réservation est déjà payée
-        if (Boolean.TRUE.equals(reservation.getEstPaye())) {
-            log.warn("⚠️ Tentative de paiement d'une réservation déjà payée: {}", reservation.getNumeroReservation());
-            throw new RuntimeException("Cette réservation est déjà payée");
-        }
+//        paiementRepository.findByReservation(reservation).ifPresent(existingPaiement -> {
+//            if (existingPaiement.getStatut() == StatutPaiementEnum.PAYE) {
+//                log.warn("⚠️ Tentative de paiement d'une réservation déjà payée: {}", reservation.getNumeroReservation());
+//                throw new RuntimeException("Cette réservation est déjà payée");
+//            }
+//        });
 
         // Vérifier si la réservation est annulée
         if (reservation.getStatut() == StatutReservationEnum.ANNULEE) {
@@ -113,7 +117,8 @@ public class PaiementService {
             throw new RuntimeException("Cette réservation est annulée");
         }
 
-        log.debug("📝 Avant paiement - Réservation {} - estPaye: {}", reservation.getNumeroReservation(), reservation.getEstPaye());
+        log.debug("📝 Avant paiement - Réservation {} - Statut: {}",
+                reservation.getNumeroReservation(), reservation.getStatut());
 
         // Créer le paiement
         Paiement paiement = new Paiement();
@@ -121,28 +126,28 @@ public class PaiementService {
         paiement.setReservation(reservation);
         paiement.setMontant(dto.getMontant());
         paiement.setModePaiement(dto.getModePaiement());
-        paiement.setStatut(StatutPaiementEnum.PAYE);
+        paiement.setStatut(StatutPaiementEnum.PAYE);  // Statut PAYE
         paiement.setNumeroRecu(dto.getNumeroRecu());
         paiement.setCommentaire(dto.getCommentaire());
         paiement.setDatePaiement(LocalDateTime.now());
 
         // Sauvegarder le paiement d'abord
         paiement = paiementRepository.save(paiement);
-        log.debug("✅ Paiement sauvegardé: {}", paiement.getNumeroPaiement());
+        log.debug("✅ Paiement sauvegardé: {} - Statut: {}", paiement.getNumeroPaiement(), paiement.getStatut());
 
-        // Mettre à jour la réservation - IMPORTANT: Bien définir estPaye à true
-        reservation.setEstPaye(true);
-        reservation.setPaiement(paiement);
+        // Mettre à jour le statut de la réservation à CONFIRMEE
         reservation.setStatut(StatutReservationEnum.CONFIRMEE);
+        reservation.setPaiement(paiement);
 
-        // Sauvegarder explicitement la réservation mise à jour
-        reservation = reservationRepository.save(reservation);
+        // Sauvegarder explicitement avec saveAndFlush pour forcer l'écriture immédiate
+        reservation = reservationRepository.saveAndFlush(reservation);
 
-        log.debug("📝 Après paiement - Réservation {} - estPaye: {} - Statut: {}",
-                reservation.getNumeroReservation(), reservation.getEstPaye(), reservation.getStatut());
+        log.debug("📝 Après paiement - Réservation {} - Statut: {}",
+                reservation.getNumeroReservation(), reservation.getStatut());
 
-        log.info("✅ Paiement manuel enregistré: {} - Réservation: {} - Montant: {} FCFA - estPaye: {}",
-                paiement.getNumeroPaiement(), reservation.getNumeroReservation(), paiement.getMontant(), reservation.getEstPaye());
+        log.info("✅ Paiement manuel enregistré: {} - Réservation: {} - Montant: {} FCFA - Statut réservation: {}",
+                paiement.getNumeroPaiement(), reservation.getNumeroReservation(),
+                paiement.getMontant(), reservation.getStatut());
 
         return paiementMapper.toDto(paiement);
     }
@@ -162,14 +167,13 @@ public class PaiementService {
             paiement.setStatut(StatutPaiementEnum.PAYE);
             paiement.setDatePaiement(LocalDateTime.now());
 
-            // Mettre à jour la réservation
+            // Mettre à jour le statut de la réservation
             Reservation reservation = paiement.getReservation();
-            reservation.setEstPaye(true);
             reservation.setStatut(StatutReservationEnum.CONFIRMEE);
-            reservationRepository.save(reservation);
+            reservationRepository.saveAndFlush(reservation);
 
-            log.info("✅ Paiement Wave réussi: {} - Réservation: {} - estPaye: {}",
-                    paiement.getNumeroPaiement(), reservation.getNumeroReservation(), reservation.getEstPaye());
+            log.info("✅ Paiement Wave réussi: {} - Réservation: {} - Statut: {}",
+                    paiement.getNumeroPaiement(), reservation.getNumeroReservation(), reservation.getStatut());
         } else {
             paiement.setStatut(StatutPaiementEnum.ECHOUE);
             paiement.setCommentaire("Paiement échoué: " + callback.getStatus());
@@ -194,14 +198,13 @@ public class PaiementService {
             paiement.setStatut(StatutPaiementEnum.PAYE);
             paiement.setDatePaiement(LocalDateTime.now());
 
-            // Mettre à jour la réservation
+            // Mettre à jour le statut de la réservation
             Reservation reservation = paiement.getReservation();
-            reservation.setEstPaye(true);
             reservation.setStatut(StatutReservationEnum.CONFIRMEE);
-            reservationRepository.save(reservation);
+            reservationRepository.saveAndFlush(reservation);
 
-            log.info("✅ Paiement Orange Money réussi: {} - Réservation: {} - estPaye: {}",
-                    paiement.getNumeroPaiement(), reservation.getNumeroReservation(), reservation.getEstPaye());
+            log.info("✅ Paiement Orange Money réussi: {} - Réservation: {} - Statut: {}",
+                    paiement.getNumeroPaiement(), reservation.getNumeroReservation(), reservation.getStatut());
         } else {
             paiement.setStatut(StatutPaiementEnum.ECHOUE);
             paiement.setCommentaire("Paiement échoué: " + callback.getStatus());
@@ -248,14 +251,14 @@ public class PaiementService {
 
     /**
      * Lister les paiements d'un utilisateur
+     * OPTIMISÉ: Utilise une requête JPQL au lieu de filtrer en mémoire
      */
     @Transactional(readOnly = true)
     public List<PaiementDto> getPaiementsByUtilisateur(Long utilisateurId) {
         log.debug("📋 Récupération des paiements pour l'utilisateur {}", utilisateurId);
 
-        List<Paiement> paiements = paiementRepository.findAll().stream()
-                .filter(p -> p.getReservation().getUtilisateur().getId().equals(utilisateurId))
-                .collect(Collectors.toList());
+        // OPTIMISATION: Requête directe au lieu de findAll() + filter
+        List<Paiement> paiements = paiementRepository.findByUtilisateurId(utilisateurId);
 
         log.debug("📊 {} paiement(s) trouvé(s) pour l'utilisateur {}", paiements.size(), utilisateurId);
 
@@ -273,9 +276,16 @@ public class PaiementService {
 
         LocalDateTime maintenant = LocalDateTime.now();
 
+        // Récupérer toutes les réservations EN_ATTENTE avec date limite dépassée
         List<Reservation> reservations = reservationRepository.findAll().stream()
-                .filter(r -> !Boolean.TRUE.equals(r.getEstPaye()) && r.getStatut() == StatutReservationEnum.EN_ATTENTE)
+                .filter(r -> r.getStatut() == StatutReservationEnum.EN_ATTENTE)
                 .filter(r -> r.getDateLimitePaiement() != null && r.getDateLimitePaiement().isBefore(maintenant))
+                .filter(r -> {
+                    // Vérifier qu'il n'y a pas de paiement avec statut PAYE
+                    return paiementRepository.findByReservation(r)
+                            .map(p -> p.getStatut() != StatutPaiementEnum.PAYE)
+                            .orElse(true);  // Si pas de paiement, considérer comme non payé
+                })
                 .collect(Collectors.toList());
 
         log.info("📊 {} réservation(s) à annuler pour non-paiement", reservations.size());

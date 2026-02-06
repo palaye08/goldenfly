@@ -72,7 +72,7 @@ public class Reservation {
     private Paiement paiement;
 
     // NOUVEAU: Champ pour indiquer si la réservation est payée
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean estPaye = false;
 
     // NOUVEAU: Date limite de paiement (24h avant le départ)

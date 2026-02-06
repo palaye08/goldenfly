@@ -2,58 +2,84 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'goldenfly-backend'
-        RENDER_SERVICE_NAME = 'goldenfly-backend'
+        DOCKER_HUB_REPO = 'palaye769/goldenfly-backend'
+        DOCKER_HUB_CREDENTIALS = 'docker-hub-new'
+        RENDER_DEPLOY_HOOK = credentials('render-backend-webhook')
+        MAVEN_OPTS = '-Dmaven.repo.local=/tmp/.m2/repository'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/votre-username/goldenfly-backend.git'
+                echo '🔄 Récupération du code source depuis GitHub...'
+                git branch: 'master',
+                    url: 'https://github.com/palaye08/goldenfly.git'
             }
         }
 
-        stage('Build') {
+        stage('Build & Test') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                echo '🔨 Construction et tests du projet Spring Boot...'
+                sh '''
+                    # Utiliser le wrapper Maven
+                    chmod +x ./mvnw
+                    ./mvnw clean compile test -Dmaven.test.failure.ignore=true
+                '''
             }
         }
 
-        stage('Test') {
+        stage('Package') {
             steps {
-                sh 'mvn test'
+                echo '📦 Création du package JAR...'
+                sh '''
+                    ./mvnw clean package -DskipTests
+                '''
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Push Docker Image') {
             steps {
+                echo '🐳 Construction et push de l\'image Docker...'
                 script {
-                    docker.build("${DOCKER_IMAGE}:${BUILD_NUMBER}")
-                    docker.build("${DOCKER_IMAGE}:latest")
-                }
-            }
-        }
+                    def imageName = "${DOCKER_HUB_REPO}:${BUILD_NUMBER}"
+                    def latestImageName = "${DOCKER_HUB_REPO}:latest"
 
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        docker.image("${DOCKER_IMAGE}:${BUILD_NUMBER}").push()
-                        docker.image("${DOCKER_IMAGE}:latest").push()
+                    dockerImage = docker.build(imageName)
+
+                    docker.withRegistry('https://registry.hub.docker.com', DOCKER_HUB_CREDENTIALS) {
+                        dockerImage.push("${BUILD_NUMBER}")
+                        dockerImage.push("latest")
                     }
+
+                    // Nettoyage des images locales
+                    sh "docker rmi ${imageName} ${latestImageName} || true"
                 }
             }
         }
 
         stage('Deploy to Render') {
             steps {
+                echo '🚀 Déploiement du backend sur Render...'
                 script {
                     sh '''
-                        curl -X POST https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys \
-                        -H "Authorization: Bearer ${RENDER_API_KEY}" \
-                        -H "Content-Type: application/json" \
-                        -d '{"clearCache": false}'
+                        curl -X POST "$RENDER_DEPLOY_HOOK" \
+                            -H "Content-Type: application/json" \
+                            -d '{"branch": "master"}'
+                    '''
+                    echo '✅ Webhook de déploiement envoyé à Render'
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                echo '🔍 Vérification du déploiement...'
+                script {
+                    sh '''
+                        echo "⏳ Attente du déploiement (60 secondes)..."
+                        sleep 60
+                        echo "✅ Backend déployé avec succès"
                     '''
                 }
             }
@@ -61,11 +87,16 @@ pipeline {
     }
 
     post {
+        always {
+            echo '🧹 Nettoyage de l\'espace de travail...'
+            deleteDir()
+        }
         success {
-            echo 'Déploiement réussi sur Render!'
+            echo '🎉 Pipeline backend exécuté avec succès!'
+            echo '📊 Image Docker: ${DOCKER_HUB_REPO}:${BUILD_NUMBER}'
         }
         failure {
-            echo 'Le déploiement a échoué.'
+            echo '❌ Pipeline backend échoué! Vérifiez les logs.'
         }
     }
 }

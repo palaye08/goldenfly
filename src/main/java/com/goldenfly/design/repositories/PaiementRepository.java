@@ -5,6 +5,7 @@ import com.goldenfly.domain.entities.Reservation;
 import com.goldenfly.domain.enums.StatutPaiementEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,4 +20,10 @@ public interface PaiementRepository extends JpaRepository<Paiement, Long> {
 
     @Query("SELECT SUM(p.montant) FROM Paiement p WHERE p.statut = 'PAYE'")
     Double calculateTotalPaiements();
+
+    // NOUVEAU: Requête pour récupérer les paiements d'un utilisateur
+    @Query("SELECT p FROM Paiement p " +
+            "WHERE p.reservation.utilisateur.id = :utilisateurId " +
+            "ORDER BY p.dateCreation DESC")
+    List<Paiement> findByUtilisateurId(@Param("utilisateurId") Long utilisateurId);
 }

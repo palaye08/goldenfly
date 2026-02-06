@@ -45,4 +45,5 @@ public class BilletDto {
     private Double prixTotal;
     private String qrCode;
     private String statut;
+    private Boolean estPaye;
 }

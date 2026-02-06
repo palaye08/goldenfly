@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_HUB_REPO = 'palaye769/goldenfly-backend'
         DOCKER_HUB_CREDENTIALS = 'docker-hub-new'
-        RENDER_DEPLOY_HOOK = credentials('render-backend-webhook')
+        RENDER_DEPLOY_HOOK = credentials('render-webhook')
         MAVEN_OPTS = '-Dmaven.repo.local=/tmp/.m2/repository'
     }
 

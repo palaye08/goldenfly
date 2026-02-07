@@ -5,12 +5,13 @@ spring:
 
   # Configuration de la base de données PostgreSQL Render
   datasource:
-    # Conversion automatique de DATABASE_URL en JDBC URL
-    url: jdbc:${DATABASE_URL:postgresql://localhost:5432/goldenfly_db}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
     # Pool de connexions optimisé pour Render (plan gratuit)
-    hikari:
+  hikari:
       maximum-pool-size: 3
       minimum-idle: 1
       connection-timeout: 30000
@@ -24,7 +25,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+
         format_sql: false
         jdbc:
           lob:

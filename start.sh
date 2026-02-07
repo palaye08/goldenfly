@@ -1,23 +1,30 @@
-#!/bin/bash
+#!/bin/sh
 
+# Script de démarrage pour Render
+# Convertit DATABASE_URL (format postgres://) en JDBC URL
+
+echo "🚀 Starting GoldenFly Backend..."
+
+# Vérifier si DATABASE_URL est défini
 if [ -n "$DATABASE_URL" ]; then
-  export SPRING_DATASOURCE_URL=$(echo $DATABASE_URL | sed 's/^postgres:/jdbc:postgresql:/')
-  echo "✅ Database URL: ${SPRING_DATASOURCE_URL:0:50}..."
+    echo "✅ DATABASE_URL detected"
+
+    # Convertir postgres:// en jdbc:postgresql://
+    export JDBC_DATABASE_URL=$(echo $DATABASE_URL | sed 's/^postgres:/jdbc:postgresql:/')
+
+    echo "📊 Database URL configured"
+else
+    echo "⚠️  WARNING: DATABASE_URL not set, using default"
+    export JDBC_DATABASE_URL="jdbc:postgresql://localhost:5432/goldenfly_db"
 fi
 
-# FORCER le profil prod
-export SPRING_PROFILES_ACTIVE=prod
+# Options JVM optimisées pour Render
+JAVA_OPTS="-Xmx512m -Xms256m -Djava.security.egd=file:/dev/./urandom"
 
-# Vérifier les variables
-echo "🔧 Configuration:"
-echo "  - Profile: $SPRING_PROFILES_ACTIVE"
-echo "  - JWT Secret: ${APP_JWT_SECRET:0:20}..."
-echo "  - JWT Expiration: ${APP_JWT_EXPIRATION:-86400000} ms"
-
-# Démarrer l'application
-exec java \
-  -Dspring.profiles.active=prod \
-  -Dapp.jwt.secret=${APP_JWT_SECRET} \
-  -Dapp.jwt.expiration=${APP_JWT_EXPIRATION:-86400000} \
-  -Dapp.jwt.refresh-expiration=${APP_JWT_REFRESH_EXPIRATION:-604800000} \
-  -jar target/*.jar
+# Démarrer l'application Spring Boot
+echo "🎯 Starting Spring Boot application..."
+exec java $JAVA_OPTS \
+    -Dserver.port=${PORT:-10000} \
+    -Dspring.profiles.active=prod \
+    -Dspring.datasource.url=$JDBC_DATABASE_URL \
+    -jar app.jar

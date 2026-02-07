@@ -1,0 +1,66 @@
+# Configuration de développement local
+spring:
+  application:
+    name: goldenfly
+
+  # Configuration de la base de données PostgreSQL locale
+  datasource:
+    url: jdbc:postgresql://localhost:5432/GestionVol
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  # Configuration JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+# Configuration du serveur
+server:
+  port: 8081
+
+# Configuration JWT
+app:
+  jwt:
+    secret: TXlTZWNyZXRLZXlGb3JKV1RUb2tlbkdlbmVyYXRpb25UaGF0SXNWZXJ5TG9uZ0FuZFNlY3VyZTIwMjRHb2xkZW5GbHk=
+    expiration: 86400000
+    refresh-expiration: 604800000
+
+# Configuration des logs
+logging:
+  level:
+    root: INFO
+    com.goldenfly: DEBUG
+    org.springframework.security: DEBUG
+
+# Configuration Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Configuration Wave (développement)
+wave:
+  api:
+    key: votre_cle_api_wave
+    url: https://api.wave.com/v1
+    secret: votre_secret_wave
+
+# Configuration Orange Money (développement)
+orange:
+  api:
+    key: votre_cle_api_orange
+    url: https://api.orange.com/orange-money-webpay/dev/v1
+    secret: votre_secret_orange
+  merchant:
+    id: votre_merchant_id

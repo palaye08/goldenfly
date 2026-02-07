@@ -1,0 +1,92 @@
+# Configuration de production pour Render
+spring:
+  application:
+    name: goldenfly
+
+  # Configuration de la base de données PostgreSQL Render
+  datasource:
+    # Conversion automatique de DATABASE_URL en JDBC URL
+    url: jdbc:${DATABASE_URL:postgresql://localhost:5432/goldenfly_db}
+    driver-class-name: org.postgresql.Driver
+
+    # Pool de connexions optimisé pour Render (plan gratuit)
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # Configuration JPA/Hibernate pour production
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  # Configuration CORS
+  web:
+    cors:
+      allowed-origins: ${ALLOWED_ORIGINS:https://goldenfly-frontend.onrender.com,http://localhost:4200}
+      allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+      allowed-headers: "*"
+      allow-credentials: true
+
+# Configuration du serveur (PORT est fourni par Render)
+server:
+  port: ${PORT:10000}
+
+# Configuration JWT (secrets en variables d'environnement)
+app:
+  jwt:
+    secret: ${JWT_SECRET:TXlTZWNyZXRLZXlGb3JKV1RUb2tlbkdlbmVyYXRpb25UaGF0SXNWZXJ5TG9uZ0FuZFNlY3VyZTIwMjRHb2xkZW5GbHk=}
+    expiration: ${JWT_EXPIRATION:86400000}
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# Configuration des logs (moins verbeux en production)
+logging:
+  level:
+    root: INFO
+    com.goldenfly: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN
+
+# Configuration Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Configuration Wave (production)
+wave:
+  api:
+    key: ${WAVE_API_KEY:default_key}
+    url: ${WAVE_API_URL:https://api.wave.com/v1}
+    secret: ${WAVE_API_SECRET:default_secret}
+
+# Configuration Orange Money (production)
+orange:
+  api:
+    key: ${ORANGE_API_KEY:default_key}
+    url: ${ORANGE_API_URL:https://api.orange.com/orange-money-webpay/dev/v1}
+    secret: ${ORANGE_API_SECRET:default_secret}
+  merchant:
+    id: ${ORANGE_MERCHANT_ID:default_merchant}
+
+# Actuator pour health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

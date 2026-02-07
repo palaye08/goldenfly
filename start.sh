@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Transformer DATABASE_URL
 if [ -n "$DATABASE_URL" ]; then
   export SPRING_DATASOURCE_URL=$(echo $DATABASE_URL | sed 's/^postgres:/jdbc:postgresql:/')
   echo "✅ Database URL: ${SPRING_DATASOURCE_URL:0:50}..."

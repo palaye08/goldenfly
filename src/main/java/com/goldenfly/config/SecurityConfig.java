@@ -92,17 +92,17 @@ public class SecurityConfig {
 
                         // ========== UTILISATEURS ==========
                         // IMPORTANT: Les routes spécifiques DOIVENT être avant les routes génériques
-                        // Profil personnel (accessible à tous les utilisateurs authentifiés)
-                        .requestMatchers(HttpMethod.GET, "/api/utilisateurs/me").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/utilisateurs/me").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/api/utilisateurs/me").authenticated()
+                                // Profil personnel (accessible à tous les utilisateurs authentifiés)
+                                .requestMatchers(HttpMethod.GET, "/api/utilisateurs/me").authenticated()
+                                .requestMatchers(HttpMethod.PUT, "/api/utilisateurs/me").authenticated()
+                                .requestMatchers(HttpMethod.PATCH, "/api/utilisateurs/me").authenticated()
 
-                        // Gestion globale des utilisateurs : ADMIN uniquement
-                        .requestMatchers(HttpMethod.GET, "/api/utilisateurs").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/utilisateurs/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/utilisateurs/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/utilisateurs/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/utilisateurs/**").authenticated()
+// Gestion globale des utilisateurs : ADMIN uniquement
+                                .requestMatchers(HttpMethod.GET, "/api/utilisateurs").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.GET, "/api/utilisateurs/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.POST, "/api/utilisateurs/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/api/utilisateurs/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/api/utilisateurs/**").hasRole("ADMIN")
 
                         // ========== RÉSERVATIONS ==========
                         // Toutes les opérations sur réservations nécessitent une authentification
